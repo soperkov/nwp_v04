@@ -1,4 +1,4 @@
-#include "nwpwin.h"
+﻿#include "nwpwin.h"
 #include <time.h>
 
 // prepare class ("STATIC") for a ship
@@ -9,7 +9,8 @@ public:
 	}
 };
 
-static const int ship_size = 20;
+static const int ship_size = 50;
+static const int obstacle_size = 50;
 
 class main_window : public vsite::nwp::window
 {
@@ -19,13 +20,13 @@ protected:
 
 	bool checkCollision(const POINT& p1, const POINT& p2) {
 		RECT rect_ship = { p1.x, p1.y, p1.x + ship_size, p1.y + ship_size };
-		RECT rect_obstacle = { p2.x, p2.y, p2.x + ship_size, p2.y + ship_size };
+		RECT rect_obstacle = { p2.x, p2.y, p2.x + obstacle_size, p2.y + obstacle_size };
 		RECT rect_intersection;
 		return IntersectRect(&rect_intersection, &rect_ship, &rect_obstacle);
 	}
 
 	void createObstacle(int x, int y) {
-		obstacle.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER, "o", 1, x, y, ship_size, ship_size);
+		obstacle.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER, "\no", 1, x, y, obstacle_size, obstacle_size);
 		SetWindowLongPtr(obstacle, GWL_EXSTYLE, GetWindowLongPtr(obstacle, GWL_EXSTYLE) | WS_EX_STATICEDGE);
 
 		obstacle_position.x = x;
@@ -45,7 +46,7 @@ protected:
 
 
 		if (!ship) {
-			ship.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER, "x", 0, p.x, p.y, ship_size, ship_size);
+			ship.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER, "\nx", 0, p.x, p.y, ship_size, ship_size);
 			createObstacle(x, y);
 			
 		}
@@ -73,27 +74,35 @@ protected:
 			switch (vk) {
 			case VK_UP:
 				ship_position.y = max(ship_position.y - moving_speed, win_border.top);
+				SetWindowText(ship, "/\\\nx");
 				break;
 			case VK_DOWN:
 				ship_position.y = min(ship_position.y + moving_speed, win_border.bottom - ship_size);
+				SetWindowText(ship, "\nx\n\\/");
 				break;
 			case VK_LEFT:
 				ship_position.x = max(ship_position.x - moving_speed, win_border.left);
+				SetWindowText(ship, "\n< x");
 				break;
 			case VK_RIGHT:
 				ship_position.x = min(ship_position.x + moving_speed, win_border.right - ship_size);
+				SetWindowText(ship, "\nx >");
+				break;
+			case VK_SPACE:
+				//TODO:dodati pucanje
 				break;
 			}
 		}
 
 		if (checkCollision(ship_position, obstacle_position)) {
-
-			DestroyWindow(obstacle);
-			int new_x = max(0, min(rand() % window_width - ship_size, window_width - ship_size));
-			int new_y = max(0, min(rand() % window_height - ship_size, window_height - ship_size));
-			createObstacle(new_x, new_y);
-
+			//TODO:izmijeniti kod tako da se sudara sa metcima a ne sa brodom, ako se sudari s brodom tada brod "umre" i vraca ga na sredinu 
+			int new_x = max(0, min(rand() % window_width - obstacle_size, window_width - obstacle_size));
+			int new_y = max(0, min(rand() % window_height - obstacle_size, window_height - obstacle_size));
+			SetWindowPos(obstacle, 0, new_x, new_y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			obstacle_position.x = new_x;
+			obstacle_position.y = new_y;
 		}
+
 		DWORD style = GetWindowLong(ship, GWL_STYLE);
 
 		SetWindowLong(ship, GWL_STYLE, style | WS_BORDER);

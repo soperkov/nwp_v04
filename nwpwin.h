@@ -23,13 +23,14 @@ public:
 		int x = CW_USEDEFAULT, int y = CW_USEDEFAULT, int width = CW_USEDEFAULT, int height = CW_USEDEFAULT);
 
 	operator HWND();
-	static LRESULT CALLBACK proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam/*, UINT_PTR tid*/);
 
 //	messages
 protected:
 	virtual int on_create(CREATESTRUCT*) { return 0; }
 	virtual void on_command(int) { }
 	virtual void on_destroy() { }
+	//virtual void on_timer(HWND hw, UINT_PTR id) { }
 
 	virtual void on_key_down(int key) { }
 	virtual void on_key_up(int key) { }

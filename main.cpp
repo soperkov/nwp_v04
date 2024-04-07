@@ -17,8 +17,10 @@ static int projectile_direction;
 static const int padding = 50;
 static int current_score = 0;
 static int highest_score = 0;
-static int current_time = 60;
-static constexpr UINT_PTR TIMER_ID = 1;
+static const int time_s = 60;
+static int current_time = time_s;
+static constexpr UINT_PTR TIMER_ID = 4;
+static bool timer = false;
 
 class main_window : public vsite::nwp::window
 {
@@ -37,9 +39,29 @@ protected:
 			highest_score = current_score;
 			SetDlgItemText(*this, 5, std::to_string(highest_score).c_str());
 		}
-		current_score = -1;
-		changeScore();
 
+		int window_width = win_border.right - win_border.left;
+		int window_height = win_border.bottom - win_border.top - padding;
+
+		ship_position.x = window_width / 2 - ship_size / 2;
+		ship_position.y = window_height / 2 - ship_size / 2;
+		current_score = -1;
+		current_time = time_s;
+
+		changeScore();
+		KillTimer(*this, TIMER_ID);
+		timer = false;
+		moveShip();
+		SetDlgItemText(*this, 4, std::to_string(time_s).c_str());
+
+	}
+
+	void moveShip() {
+
+		DWORD style = GetWindowLong(ship, GWL_STYLE);
+
+		SetWindowLong(ship, GWL_STYLE, style | WS_BORDER);
+		SetWindowPos(ship, 0, ship_position.x, ship_position.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	}
 
 	bool checkCollision(const POINT& p1, const POINT& p2, int size_object1, int size_object2) {
@@ -148,6 +170,19 @@ protected:
 		}
 	}
 
+	void main_window::on_timer(int id) override {
+		if (id == TIMER_ID) {
+			current_time--;
+
+			std::string time_text = std::to_string(current_time);
+			SetDlgItemText(*this, 4, std::to_string(current_time).c_str());
+
+			if (current_time == 0) {
+				gameOver();
+			}
+		}
+	}
+
 	void on_left_button_down(POINT p) override { 
 		//  create ship if it doesn't exist yet
 		ship_position = p;
@@ -163,6 +198,8 @@ protected:
 		if (!ship) {
 			ship.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER, "\nx", 0, p.x, p.y, ship_size, ship_size);
 			createObstacle(x, y);
+			SetTimer(*this, TIMER_ID, 1000, nullptr);
+			timer = true;
 			
 		}
 		//  change current location
@@ -181,9 +218,12 @@ protected:
 	void on_key_down(int vk) override {
 		// if ship exists, move it depending on key and mark as "moving"
 		int moving_speed = GetAsyncKeyState(VK_CONTROL) ? 40 : 20;
-		int window_width = win_border.right - win_border.left;
-		int window_height = win_border.bottom - win_border.top - padding;
 		GetClientRect(*this, &win_border);
+
+		if (!timer) {
+			SetTimer(*this, TIMER_ID, 1000, nullptr);
+			timer = true;
+		}
 
 		if (ship) {
 			switch (vk) {
@@ -216,15 +256,10 @@ protected:
 
 		if (checkCollision(ship_position, obstacle_position, ship_size, obstacle_size)) {
 			//izmijeniti kod tako da se sudara sa metcima a ne sa brodom, ako se sudari s brodom tada brod "umre" i vraca ga na sredinu 
-			ship_position.x = window_width / 2 - ship_size / 2;
-			ship_position.y = window_height / 2 - ship_size / 2;
 			gameOver();
 		}
 
-		DWORD style = GetWindowLong(ship, GWL_STYLE);
-
-		SetWindowLong(ship, GWL_STYLE, style | WS_BORDER);
-		SetWindowPos(ship, 0, ship_position.x, ship_position.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		moveShip();
 	}
 	void on_destroy() override {
 		::PostQuitMessage(0);
@@ -248,7 +283,7 @@ int main_window::on_create(CREATESTRUCT* pcs)
 {
 	score.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER | BS_CENTER | WS_BORDER, "0", 3, 30, 10, 50, 30);
 
-	//time.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER | BS_CENTER | WS_BORDER, std::to_string(current_time).c_str(), 4, 90, 10, 50, 30);
+	time.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER | BS_CENTER | WS_BORDER, std::to_string(current_time).c_str(), 4, 90, 10, 50, 30);
 
 	high_score.create(*this, WS_CHILD | WS_VISIBLE | SS_CENTER | BS_CENTER | WS_BORDER, "0", 5, 150, 10, 50, 30);	
 	

@@ -57,16 +57,13 @@ bool window::create(HWND parent, DWORD style, LPCTSTR caption, int IdOrMenu, int
 	return hw != 0;
 }
 
-//void window::on_timer(HWND hw, UINT_PTR id) {
-//
-//}
 
 window::operator HWND()
 {
 	return hw;
 }
 
-LRESULT CALLBACK window::proc(HWND hw, UINT msg, WPARAM wp, LPARAM lp/*, UINT_PTR tid*/)
+LRESULT CALLBACK window::proc(HWND hw, UINT msg, WPARAM wp, LPARAM lp)
 {
 	if (msg == WM_CREATE) {
 		CREATESTRUCT* pcs = reinterpret_cast<CREATESTRUCT*>(lp);
@@ -84,7 +81,7 @@ LRESULT CALLBACK window::proc(HWND hw, UINT msg, WPARAM wp, LPARAM lp/*, UINT_PT
 		case WM_KEYDOWN:		pw->on_key_down(wp); return 0;
 		case WM_KEYUP:			pw->on_key_up(wp); return 0;
 		case WM_LBUTTONDOWN:	pw->on_left_button_down(get_point(lp)); return 0;
-		//case WM_TIMER:			pw->on_timer(hw, tid); return 0;
+		case WM_TIMER:			pw->on_timer(wp); return 0;
 	}
 	return ::DefWindowProc(hw, msg, wp, lp);
 }
